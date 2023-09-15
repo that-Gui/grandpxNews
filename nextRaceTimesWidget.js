@@ -22,7 +22,6 @@ const TimeParse = async (time) => {
 		hour: localTime.getHours(),
 		minute: localTime.getMinutes(),
 	};
-	console.log(desiredFormat);
 
 	return desiredFormat;
 };
