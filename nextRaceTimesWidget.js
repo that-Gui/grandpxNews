@@ -49,20 +49,52 @@ const nextRaceTimesWidget = async () => {
 		return acc;
 	}, []);
 
+	// gathering the array to breakdown and display
+	console.log(raceStages);
+
+	/* // single stage component for now
 	const timeParseTest = await TimeParse(
 		raceStages[0].date + 'T' + raceStages[0].time
 	);
-	console.log(raceData);
-
 	const text = document.createElement('p');
+	text.innerHTML = `${timeParseTest.month} ${timeParseTest.day} | ${raceStages[0].name} | Your Time ${timeParseTest.hour}:${timeParseTest.minute} | ⛈️`; 
+	document.getElementById('kitchensink').appendChild(text);*/
 
-	text.innerHTML = `${timeParseTest.month} ${timeParseTest.day} | ${raceStages[0].name} | ${timeParseTest.hour}:${timeParseTest.minute} | ⛈️`;
-
+	/* // adding a small title to the widget
 	const nxtrace = document.getElementById('nxtrace');
+	nxtrace.innerHTML = `${raceData.raceName} 👉🏻 ${raceData.Circuit.circuitName} 🏁 on ${raceDay.day}/${raceDay.month}`; */
 
-	nxtrace.innerHTML = `${raceData.raceName} @ ${raceData.Circuit.circuitName} on ${raceDay.day} ${raceDay.month}`;
+	/* // dynamic stage component
+	raceStages.forEach(async (stage) => {
+		const timeParseTest = await TimeParse(stage.date + 'T' + stage.time);
+		const text = document.createElement('p');
+		text.innerHTML = `${timeParseTest.month} ${timeParseTest.day} | ${stage.name} | Your Time ${timeParseTest.hour}:${timeParseTest.minute} | ⛈️`;
+		document.getElementById('kitchensink').appendChild(text);
+	}); */
 
-	document.getElementById('kitchensink').appendChild(text);
+	// dynamic stage component using an html table element
+	const table = document.createElement('table');
+	const tableHeader = document.createElement('thead');
+	const tableBody = document.createElement('tbody'); // Add this line to create the table body
+
+	table.classList.add('nxtracetable');
+	document.getElementById('kitchensink').appendChild(table);
+
+	// Create table header row
+	const headerRow = document.createElement('tr');
+	headerRow.innerHTML = `<th colspan="3">${raceData.raceName} 👉🏻 ${raceData.Circuit.circuitName} 🏁 on ${raceDay.day}/${raceDay.month}</th>`;
+	tableHeader.appendChild(headerRow);
+	table.appendChild(tableHeader);
+
+	// Create table rows with data
+	raceStages.forEach(async (item) => {
+		const timeParseTest = await TimeParse(item.date + 'T' + item.time);
+		const row = document.createElement('tr');
+		row.innerHTML = `<td>${timeParseTest.month} ${timeParseTest.day}</td><td>${item.name}</td><td>Your Time ${timeParseTest.hour}:${timeParseTest.minute}</td><td>⛈️</td>`;
+		tableBody.appendChild(row);
+	});
+
+	table.appendChild(tableBody);
 };
 
 nextRaceTimesWidget();
