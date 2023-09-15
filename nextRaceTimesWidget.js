@@ -30,6 +30,7 @@ const nextRaceTimesWidget = async () => {
 	const f1pull = await fetch('http://ergast.com/api/f1/current/next.json');
 	const f1pulljson = await f1pull.json();
 	const raceData = await f1pulljson.MRData.RaceTable.Races[0];
+	const raceDay = await TimeParse(raceData.date);
 	const raceKeysToInclude = [
 		'FirstPractice',
 		'SecondPractice',
@@ -39,7 +40,11 @@ const nextRaceTimesWidget = async () => {
 	];
 	const raceStages = raceKeysToInclude.reduce((acc, key) => {
 		if (raceData[key]) {
-			acc.push(raceData[key]);
+			acc.push({
+				name: key,
+				date: raceData[key].date,
+				time: raceData[key].time,
+			});
 		}
 		return acc;
 	}, []);
@@ -47,11 +52,15 @@ const nextRaceTimesWidget = async () => {
 	const timeParseTest = await TimeParse(
 		raceStages[0].date + 'T' + raceStages[0].time
 	);
-	console.log(timeParseTest);
+	console.log(raceData);
 
 	const text = document.createElement('p');
 
-	text.innerHTML = `testing time parser: ${timeParseTest.month} ${timeParseTest.day}`;
+	text.innerHTML = `${timeParseTest.month} ${timeParseTest.day} | ${raceStages[0].name} | ${timeParseTest.hour}:${timeParseTest.minute} | ⛈️`;
+
+	const nxtrace = document.getElementById('nxtrace');
+
+	nxtrace.innerHTML = `${raceData.raceName} @ ${raceData.Circuit.circuitName} on ${raceDay.day} ${raceDay.month}`;
 
 	document.getElementById('kitchensink').appendChild(text);
 };
