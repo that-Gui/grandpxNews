@@ -27,13 +27,14 @@ body {
 
 /* widget container section */
 
-.widgetContainer {
+.widgetcontainer {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
 	padding: 16px;
 	background-color: var(--primary);
+	color: var(--secondary);
 	min-height: 128px;
 	min-width: 256px;
 }
