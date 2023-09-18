@@ -1,3 +1,4 @@
+// timeparse function expects a time string in the format of 2021-07-18T14:00:00Z
 const TimeParse = async (time) => {
 	const localTime = new Date(time);
 
@@ -29,6 +30,8 @@ const TimeParse = async (time) => {
 
 	return desiredFormat;
 };
+
+const ting = 'f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1';
 
 const weatherCheck = async (lat, long, date) => {
 	const weatherCheck = await fetch(
@@ -66,6 +69,7 @@ const nextRaceTimesWidget = async () => {
 		'Qualifying',
 		'Sprint',
 	];
+
 	const raceStages = raceKeysToInclude.reduce((acc, key) => {
 		if (raceData[key]) {
 			acc.push({
@@ -77,21 +81,6 @@ const nextRaceTimesWidget = async () => {
 		return acc;
 	}, []);
 
-	//
-
-	/* // adding a small title to the widget
-	const nxtrace = document.getElementById('nxtrace');
-	nxtrace.innerHTML = `${raceData.raceName} 👉🏻 ${raceData.Circuit.circuitName} 🏁 on ${raceDay.day}/${raceDay.month}`; */
-
-	/* // dynamic stage component
-	raceStages.forEach(async (stage) => {
-		const timeParseTest = await TimeParse(stage.date + 'T' + stage.time);
-		const text = document.createElement('p');
-		text.classList.add('nxtracetable');
-		text.innerHTML = `${timeParseTest.month} ${timeParseTest.day} | ${stage.name} | Your Time ${timeParseTest.hour}:${timeParseTest.minute} | ⛈️`;
-		document.getElementById('kitchensink').appendChild(text);
-	});
- */
 	// dynamic stage component using an html table element
 	const table = document.createElement('table');
 	const tableHeader = document.createElement('thead');
@@ -111,22 +100,28 @@ const nextRaceTimesWidget = async () => {
 
 	//chatGPT made me aware of this method, Promise.all() is a way to run multiple async functions at the same time
 	await Promise.all(
-		raceStages.map(async (item) => {
+		raceStages.map(async (item, index) => {
 			const date = item.date;
 			const stageWeather = await weatherCheck(racelat, racelong, date);
-			const timeParseTest = await TimeParse(date + 'T' + item.time);
+			const stageTime = await TimeParse(date + 'T' + item.time);
 			const row = document.createElement('tr');
-			row.innerHTML = `<td>${timeParseTest.month} ${timeParseTest.day}</td><td>${item.name}</td><td>${timeParseTest.hour}:${timeParseTest.minute}</td><td><img src='https:${stageWeather.weatherImg}' alt="weather img icon"></td><td> <p>${stageWeather.weatherText}</p></td>`;
+			row.setAttribute('data-key', `row-${index}`);
+			row.innerHTML = `<td>${stageTime.month} ${stageTime.day}</td><td>${item.name}</td><td>${stageTime.hour}:${stageTime.minute}</td><td><img src='https:${stageWeather.weatherImg}' alt="weather img icon"></td><td> <p>${stageWeather.weatherText}</p></td>`;
 			dynamicRows.push(row);
 		})
 	);
+
+	// sorting the dynamic rows by date + time before adding them to the table body
+	dynamicRows.sort((a, b) => {
+		const aDate = a.getAttribute('data-key');
+		const bDate = b.getAttribute('data-key');
+		return aDate.localeCompare(bDate);
+	});
 
 	// adding the dynamic rows to the table body
 	dynamicRows.forEach((row) => {
 		tableBody.appendChild(row);
 	});
-
-	console.log(dynamicRows);
 
 	table.appendChild(tableBody);
 
@@ -136,10 +131,12 @@ const nextRaceTimesWidget = async () => {
 	tableBody.appendChild(racedayrow);
 
 	// adding the table footer
+	const userLocalTime = new Date();
+	const userLocalTimeParsed = await TimeParse(userLocalTime);
 	const tableFooter = document.createElement('tfoot');
 	const footerRow = document.createElement('tr');
 	footerRow.classList.add('localtimetext');
-	footerRow.innerHTML = `<th colspan="6">All shown times are your local time</th>`;
+	footerRow.innerHTML = `<td colspan="5">All times are displayed in your local time | Your time - ${userLocalTimeParsed.hour}:${userLocalTimeParsed.minute}</td>`;
 	tableFooter.appendChild(footerRow);
 	table.appendChild(tableFooter);
 
