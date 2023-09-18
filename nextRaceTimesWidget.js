@@ -32,7 +32,7 @@ const TimeParse = async (time) => {
 
 const weatherCheck = async (lat, long, date) => {
 	const weatherCheck = await fetch(
-		`https://api.weatherapi.com/v1/forecast.json?q=${lat}%2C${long}&days=1&dt=dt%3D${date}&key=`
+		`https://api.weatherapi.com/v1/forecast.json?q=${lat}%2C${long}&days=1&dt=dt%3D${date}&key=${ting}`
 	);
 	const weatherCheckJson = await weatherCheck.json();
 
@@ -57,9 +57,6 @@ const nextRaceTimesWidget = async () => {
 
 	// requesting weather data for race day from the weatherapi
 	const raceDayWeather = await weatherCheck(racelat, racelong, raceData.date);
-
-	// data logging spot
-	console.log(raceData);
 
 	// section to parse the race events from the raceData object
 	const raceKeysToInclude = [
@@ -112,19 +109,24 @@ const nextRaceTimesWidget = async () => {
 	// Create table rows with data
 	const dynamicRows = [];
 
-	raceStages.forEach(async (item) => {
-		const date = item.date;
-		const stageWeather = await weatherCheck(racelat, racelong, date);
-		const timeParseTest = await TimeParse(date + 'T' + item.time);
-		const row = document.createElement('tr');
-		row.innerHTML = `<td>${timeParseTest.month} ${timeParseTest.day}</td><td>${item.name}</td><td>${timeParseTest.hour}:${timeParseTest.minute}</td><td><img src='https:${stageWeather.weatherImg}' alt="weather img icon"></td><td> <p>${stageWeather.weatherText}</p></td>`;
-		dynamicRows.push(row);
-	});
+	//chatGPT made me aware of this method, Promise.all() is a way to run multiple async functions at the same time
+	await Promise.all(
+		raceStages.map(async (item) => {
+			const date = item.date;
+			const stageWeather = await weatherCheck(racelat, racelong, date);
+			const timeParseTest = await TimeParse(date + 'T' + item.time);
+			const row = document.createElement('tr');
+			row.innerHTML = `<td>${timeParseTest.month} ${timeParseTest.day}</td><td>${item.name}</td><td>${timeParseTest.hour}:${timeParseTest.minute}</td><td><img src='https:${stageWeather.weatherImg}' alt="weather img icon"></td><td> <p>${stageWeather.weatherText}</p></td>`;
+			dynamicRows.push(row);
+		})
+	);
 
 	// adding the dynamic rows to the table body
 	dynamicRows.forEach((row) => {
 		tableBody.appendChild(row);
 	});
+
+	console.log(dynamicRows);
 
 	table.appendChild(tableBody);
 
