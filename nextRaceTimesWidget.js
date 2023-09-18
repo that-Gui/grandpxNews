@@ -16,14 +16,32 @@ const TimeParse = async (time) => {
 		'Dec',
 	];
 
+	// function to pad single digit numbers with a zero in order to always have 4 digits in the time
+	const padZero = (num) => (num < 10 ? `0${num}` : num);
+
+	// decided to return an object for easier data plotting in the loops
 	const desiredFormat = {
 		month: monthNames[localTime.getMonth()],
 		day: localTime.getDate(),
-		hour: localTime.getHours(),
-		minute: localTime.getMinutes(),
+		hour: padZero(localTime.getHours()),
+		minute: padZero(localTime.getMinutes()),
 	};
 
 	return desiredFormat;
+};
+
+const weatherCheck = async (lat, long, date) => {
+	const weatherCheck = await fetch(
+		`https://api.weatherapi.com/v1/forecast.json?q=${lat}%2C${long}&days=1&dt=dt%3D${date}&key=`
+	);
+	const weatherCheckJson = await weatherCheck.json();
+
+	const weatherData = {
+		weatherImg: weatherCheckJson.forecast.forecastday[0].day.condition.icon,
+		weatherText: weatherCheckJson.forecast.forecastday[0].day.condition.text,
+	};
+
+	return weatherData;
 };
 
 const nextRaceTimesWidget = async () => {
@@ -32,19 +50,16 @@ const nextRaceTimesWidget = async () => {
 	const f1pulljson = await f1pull.json();
 	const raceData = await f1pulljson.MRData.RaceTable.Races[0];
 
-	const raceDay = await TimeParse(raceData.date);
-
+	//pooling relevant data from the raceData object
+	const raceDay = await TimeParse(raceData.date + 'T' + raceData.time);
 	const racelat = raceData.Circuit.Location.lat;
 	const racelong = raceData.Circuit.Location.long;
-	console.log(racelat, racelong);
 
 	// requesting weather data for race day from the weatherapi
-	const racedayweather = await fetch(
-		`https://api.weatherapi.com/v1/forecast.json?q=${racelat}%2C${racelong}&days=1&dt=dt%3D${raceDay}&key=`
-	);
-	const racedayweatherJson = await racedayweather.json();
-	const racedayweatherImg = await racedayweatherJson.forecast.forecastday[0].day
-		.condition.icon;
+	const raceDayWeather = await weatherCheck(racelat, racelong, raceData.date);
+
+	// data logging spot
+	console.log(raceData);
 
 	// section to parse the race events from the raceData object
 	const raceKeysToInclude = [
@@ -65,18 +80,7 @@ const nextRaceTimesWidget = async () => {
 		return acc;
 	}, []);
 
-	// data logging spot
-	console.log(raceData);
-	console.log(raceData.Circuit.Location);
 	//
-
-	/* // single stage component for now
-	const timeParseTest = await TimeParse(
-		raceStages[0].date + 'T' + raceStages[0].time
-	);
-	const text = document.createElement('p');
-	text.innerHTML = `${timeParseTest.month} ${timeParseTest.day} | ${raceStages[0].name} | Your Time ${timeParseTest.hour}:${timeParseTest.minute} | ⛈️`; 
-	document.getElementById('kitchensink').appendChild(text);*/
 
 	/* // adding a small title to the widget
 	const nxtrace = document.getElementById('nxtrace');
@@ -94,35 +98,50 @@ const nextRaceTimesWidget = async () => {
 	// dynamic stage component using an html table element
 	const table = document.createElement('table');
 	const tableHeader = document.createElement('thead');
-	const tableBody = document.createElement('tbody'); // Add this line to create the table body
+	const tableBody = document.createElement('tbody');
 
 	table.classList.add('nxtracetable');
 	document.getElementById('kitchensink').appendChild(table);
 
 	// Create table header row
 	const headerRow = document.createElement('tr');
-	headerRow.innerHTML = `<th colspan="3">${raceData.raceName} 👉🏻 ${raceData.Circuit.circuitName} 🏁 on ${raceDay.day}/${raceDay.month} | <img src='https:${racedayweatherImg}' alt="weather img icon"></th>`;
+	headerRow.innerHTML = `<th colspan="3">${raceData.raceName} 👉🏻 ${raceData.Circuit.circuitName} 🏁 </th>`;
 	tableHeader.appendChild(headerRow);
 	table.appendChild(tableHeader);
 
 	// Create table rows with data
+	const dynamicRows = [];
+
 	raceStages.forEach(async (item) => {
 		const date = item.date;
-		const weatherCheck = await fetch(
-			`https://api.weatherapi.com/v1/forecast.json?q=1.2914%2C103.864&days=1&dt=${date}&key=`
-		);
-		const weatherCheckJson = await weatherCheck.json();
-		const weatherImg = await weatherCheckJson.forecast.forecastday[0].day
-			.condition.icon;
-		const weatherText = await weatherCheckJson.forecast.forecastday[0].day
-			.condition.text;
+		const stageWeather = await weatherCheck(racelat, racelong, date);
 		const timeParseTest = await TimeParse(date + 'T' + item.time);
 		const row = document.createElement('tr');
-		row.innerHTML = `<td>${timeParseTest.month} ${timeParseTest.day}</td><td>${item.name}</td><td>${timeParseTest.hour}:${timeParseTest.minute}</td><td><img src='https:${weatherImg}' alt="weather img icon"></td><td><p>${weatherText}</p></td>`;
+		row.innerHTML = `<td>${timeParseTest.month} ${timeParseTest.day}</td><td>${item.name}</td><td>${timeParseTest.hour}:${timeParseTest.minute}</td><td><img src='https:${stageWeather.weatherImg}' alt="weather img icon"></td><td> <p>${stageWeather.weatherText}</p></td>`;
+		dynamicRows.push(row);
+	});
+
+	// adding the dynamic rows to the table body
+	dynamicRows.forEach((row) => {
 		tableBody.appendChild(row);
 	});
 
 	table.appendChild(tableBody);
+
+	// adding the main race event to the bottom of the table body element
+	const racedayrow = document.createElement('tr');
+	racedayrow.innerHTML = `<td>${raceDay.month} ${raceDay.day}</td><td><p>MainEvent</p></td><td>${raceDay.hour}:${raceDay.minute}</td><td><img src='https:${raceDayWeather.weatherImg}' alt="weather img icon"></td><td> <p>${raceDayWeather.weatherText}</p></td>`;
+	tableBody.appendChild(racedayrow);
+
+	// adding the table footer
+	const tableFooter = document.createElement('tfoot');
+	const footerRow = document.createElement('tr');
+	footerRow.classList.add('localtimetext');
+	footerRow.innerHTML = `<th colspan="6">All shown times are your local time</th>`;
+	tableFooter.appendChild(footerRow);
+	table.appendChild(tableFooter);
+
+	//end of the script
 };
 
 nextRaceTimesWidget();
