@@ -43,6 +43,35 @@ const handleTime = async () => {
 	// removing the button after it has been clicked
 	const tableOpenButton = document.querySelector('.tableopen');
 	tableOpenButton.remove();
+
+	// adding the button to close the table
+	const tableCloseButton = document.createElement('span');
+	tableCloseButton.classList.add('tableclose');
+	tableCloseButton.innerHTML = `<button onclick="handleClose()" id='togglebtn'>CLOSE</button>`;
+	document.querySelector('.headerrow').appendChild(tableCloseButton);
+};
+
+// function to toggle the table open and close state using the class names
+const handleClose = () => {
+	const togglebtn = document.getElementById('togglebtn');
+
+	if (togglebtn.innerHTML === 'CLOSE') {
+		togglebtn.innerHTML = 'GO';
+
+		const openElements = document.querySelectorAll('.itemstoclose');
+		openElements.forEach((item) => {
+			item.classList.remove('itemstoclose');
+			item.classList.add('itemstoopen');
+		});
+	} else {
+		togglebtn.innerHTML = 'CLOSE';
+
+		const closeElements = document.querySelectorAll('.itemstoopen');
+		closeElements.forEach((item) => {
+			item.classList.remove('itemstoopen');
+			item.classList.add('itemstoclose');
+		});
+	}
 };
 
 // timeparse function expects a time string in the format of 2021-07-18T14:00:00Z
@@ -78,7 +107,7 @@ const TimeParse = async (time) => {
 	return desiredFormat;
 };
 
-const ting = 'f1f1f1f1f1f1f1';
+const ting = 'f1f1f1f1f1';
 
 const weatherCheck = async (lat, long, date) => {
 	const weatherCheck = await fetch(
@@ -140,7 +169,7 @@ const nextRaceTimesWidget = async () => {
 
 	// Create table header row
 	const headerRow = document.createElement('tr');
-	headerRow.innerHTML = `<th colspan="5">${raceData.raceName} 👉🏻 ${raceData.Circuit.circuitName} 🏁 <span class='tableopen'><button onclick="handleTime()">GO</button></span> </th>`;
+	headerRow.innerHTML = `<th colspan="5" class='headerrow'>${raceData.raceName} 👉🏻 ${raceData.Circuit.circuitName} 🏁 <span class='tableopen'><button onclick="handleTime()">GO</button></span> </th>`;
 	tableHeader.appendChild(headerRow);
 	table.appendChild(tableHeader);
 
