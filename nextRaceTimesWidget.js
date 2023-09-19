@@ -49,7 +49,7 @@ const weatherCheck = async (lat, long, date) => {
 
 const nextRaceTimesWidget = async () => {
 	// requesting race day data from the ergast api
-	const f1pull = await fetch('http://ergast.com/api/f1/current/next.json');
+	const f1pull = await fetch('https://ergast.com/api/f1/current/next.json');
 	const f1pulljson = await f1pull.json();
 	const raceData = await f1pulljson.MRData.RaceTable.Races[0];
 
