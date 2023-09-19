@@ -1,3 +1,43 @@
+// function to convert racetimes to local time after cdn snapshot
+const handleTime = async () => {
+	const dateElements = document.querySelectorAll('.stagedate');
+
+	for (const item of dateElements) {
+		const time = item.innerHTML;
+		const timeParsed = await TimeParse(time);
+		item.innerHTML = `${timeParsed.month} ${timeParsed.day}`;
+	}
+
+	const timeElements = document.querySelectorAll('.stagetime');
+
+	for (const item of timeElements) {
+		const time = item.innerHTML;
+		const timeParsed = await TimeParse(time);
+		item.innerHTML = `${timeParsed.hour}:${timeParsed.minute}`;
+	}
+
+	// function to pad single digit numbers with a zero in order to always have 4 digits in the time
+	const padZero = (num) => (num < 10 ? `0${num}` : num);
+	// this is the part that should run constantly like a clock
+	const secondsElements = document.querySelectorAll('.yourtime');
+	setInterval(() => {
+		const localTime = new Date();
+		const localTimeParsed = {
+			hour: localTime.getHours(),
+			minute: localTime.getMinutes(),
+			second: padZero(localTime.getSeconds()),
+		};
+
+		secondsElements.forEach((item) => {
+			item.innerHTML = `${localTimeParsed.hour}:${localTimeParsed.minute}:${localTimeParsed.second}`;
+		});
+	}, 1000);
+
+	// removing the button after it has been clicked
+	const tableOpenButton = document.querySelector('.tableopen');
+	tableOpenButton.remove();
+};
+
 // timeparse function expects a time string in the format of 2021-07-18T14:00:00Z
 const TimeParse = async (time) => {
 	const localTime = new Date(time);
@@ -31,7 +71,7 @@ const TimeParse = async (time) => {
 	return desiredFormat;
 };
 
-const ting = 'f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1';
+const ting = 'f1f1f1f1f1f1';
 
 const weatherCheck = async (lat, long, date) => {
 	const weatherCheck = await fetch(
@@ -54,7 +94,7 @@ const nextRaceTimesWidget = async () => {
 	const raceData = await f1pulljson.MRData.RaceTable.Races[0];
 
 	//pooling relevant data from the raceData object
-	const raceDay = await TimeParse(raceData.date + 'T' + raceData.time);
+	const raceDay = raceData.date + 'T' + raceData.time;
 	const racelat = raceData.Circuit.Location.lat;
 	const racelong = raceData.Circuit.Location.long;
 
@@ -87,11 +127,13 @@ const nextRaceTimesWidget = async () => {
 	const tableBody = document.createElement('tbody');
 
 	table.classList.add('nxtracetable');
+	tableBody.classList.add('nxtracetablebody');
+
 	document.getElementById('kitchensink').appendChild(table);
 
 	// Create table header row
 	const headerRow = document.createElement('tr');
-	headerRow.innerHTML = `<th colspan="3">${raceData.raceName} 👉🏻 ${raceData.Circuit.circuitName} 🏁 </th>`;
+	headerRow.innerHTML = `<th colspan="5">${raceData.raceName} 👉🏻 ${raceData.Circuit.circuitName} 🏁 <button class='tableopen' onclick="handleTime()">GO</button> </th>`;
 	tableHeader.appendChild(headerRow);
 	table.appendChild(tableHeader);
 
@@ -103,10 +145,10 @@ const nextRaceTimesWidget = async () => {
 		raceStages.map(async (item, index) => {
 			const date = item.date;
 			const stageWeather = await weatherCheck(racelat, racelong, date);
-			const stageTime = await TimeParse(date + 'T' + item.time);
+			const stageTime = date + 'T' + item.time;
 			const row = document.createElement('tr');
 			row.setAttribute('data-key', `row-${index}`);
-			row.innerHTML = `<td>${stageTime.month} ${stageTime.day}</td><td>${item.name}</td><td>${stageTime.hour}:${stageTime.minute}</td><td><img src='https:${stageWeather.weatherImg}' alt="weather img icon"></td><td> <p>${stageWeather.weatherText}</p></td>`;
+			row.innerHTML = `<td class='stagedate'>${stageTime}</td><td>${item.name}</td><td><i class="fa-regular fa-clock"></i></td><td class='stagetime'>${stageTime}</td><td><img src='https:${stageWeather.weatherImg}' alt="weather img icon">${stageWeather.weatherText}</td>`;
 			dynamicRows.push(row);
 		})
 	);
@@ -127,16 +169,13 @@ const nextRaceTimesWidget = async () => {
 
 	// adding the main race event to the bottom of the table body element
 	const racedayrow = document.createElement('tr');
-	racedayrow.innerHTML = `<td>${raceDay.month} ${raceDay.day}</td><td><p>MainEvent</p></td><td>${raceDay.hour}:${raceDay.minute}</td><td><img src='https:${raceDayWeather.weatherImg}' alt="weather img icon"></td><td> <p>${raceDayWeather.weatherText}</p></td>`;
+	racedayrow.innerHTML = `<td class='stagedate'>${raceDay}</td><td>Race</td><td><i class="fa-regular fa-clock"></i> </td><td class='stagetime'>${raceDay}</td><td><img src='https:${raceDayWeather.weatherImg}' alt="weather img icon"> ${raceDayWeather.weatherText}</td>`;
 	tableBody.appendChild(racedayrow);
 
-	// adding the table footer
-	const userLocalTime = new Date();
-	const userLocalTimeParsed = await TimeParse(userLocalTime);
+	// adding the table footer with the user local time which should run constatnly like a clock
 	const tableFooter = document.createElement('tfoot');
 	const footerRow = document.createElement('tr');
-	footerRow.classList.add('localtimetext');
-	footerRow.innerHTML = `<td colspan="5">All times are displayed in your local time | Your time - ${userLocalTimeParsed.hour}:${userLocalTimeParsed.minute}</td>`;
+	footerRow.innerHTML = `<td colspan='5'>All times are displayed in your local time | Your time <i class="fa-regular fa-clock"></i><span class='yourtime'></span></td>`;
 	tableFooter.appendChild(footerRow);
 	table.appendChild(tableFooter);
 
