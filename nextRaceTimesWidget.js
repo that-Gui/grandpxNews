@@ -107,7 +107,7 @@ const TimeParse = async (time) => {
 	return desiredFormat;
 };
 
-const ting = 'f1f1f1f1f1';
+const ting = 'f1f1f1f1f1f1';
 
 const weatherCheck = async (lat, long, date) => {
 	const weatherCheck = await fetch(
