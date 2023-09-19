@@ -40,3 +40,10 @@ body {
 }
 
 /* table section */
+.itemstoopen {
+	display: none;
+}
+
+.itemstoclose {
+	display: block;
+}
